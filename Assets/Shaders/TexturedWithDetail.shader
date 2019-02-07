@@ -4,21 +4,15 @@
 
 // Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "Custom/MyFirstShader"
+Shader "Custom/Textured With Detail"
 {
-
-	//Similar to a class where you store all the variables
 	Properties
 	{
-		//_Tint is the var name, it could be anything. naming convention is like dat coz nothing else uses it/no confusion
-		//followed by string, which is used to label the properth in the material inspector
-		//and Color, the type
-		// = (value) is default value similar to how we can do = something when declaring public vars
-		//
 		_Tint ("Tint", Color) = (1,1,1,1)
 		_MainTex ("Texture", 2D) = "white" 
 
-
+        //Grayscale detail textures will adjust the original color strictly by brightening and darkening it. alpha = 0.5
+        _DetailTex ("Detail Texture", 2D) = "gray" {}
 	}
 
 
@@ -36,11 +30,11 @@ Shader "Custom/MyFirstShader"
 			#include "UnityCG.cginc"
 
 			float4 _Tint;
-			sampler2D _MainTex;
+			sampler2D _MainTex, _DetailTex;
 
-			//ST stand for scale and translation. now unity uses Tiling and Offset but coz backwards compatibility it satys the same
+			//ST stand for scale and translation. now unity uses Tiling and Offset but coz backwards compatibility it stays the same
 			//adding [textureName]_ST will make the tiling/offset info to be passed to that var. It has to be a f4;
-			float4 _MainTex_ST;
+			float4 _MainTex_ST, _DetailTex_ST;
 
 
 			//typical structure, notice the semicolon at the end.
@@ -48,6 +42,7 @@ Shader "Custom/MyFirstShader"
 			{
 				float4 position : SV_POSITION;
 				float2 uv: TEXCOORD0;
+                float2 uvDetail: TEXCOORD1;
 			};
 
 			struct VertexData
@@ -71,8 +66,8 @@ Shader "Custom/MyFirstShader"
 
 
 				//Same as i.uv = TRANSFORM_TEX(v.uv, _MainTex);
-				//xy = tiling , zw = offset
 				i.uv = v.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+                i.uvDetail = v.uv * _DetailTex_ST.xy + _DetailTex_ST.zw;
 
 				return i;
 			}
@@ -84,7 +79,11 @@ Shader "Custom/MyFirstShader"
 			//the vertex output should match the fragment input 
 			float4 MyFragmentProgram(Interpolators i) : SV_TARGET
 			{
-				return tex2D(_MainTex, i.uv) * _Tint;
+				float4 color =  tex2D(_MainTex, i.uv) * _Tint;
+                
+                //unity_ColorSpaceDouble is = 2 if rendering in gamma space colors and = ~4.59 is rendering in linear space colors. Google pls
+				color *= tex2D(_MainTex, i.uvDetail) * unity_ColorSpaceDouble; 
+				return color;
 			}
 
 
