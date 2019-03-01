@@ -46,7 +46,7 @@
 
 			float4 MyFragmentProgram(Interpolators i) : SV_TARGET
 			{
-                return tex2D(_MainTex, i.mainUV) *  tex2D(_LightTex, i.mainUV);
+                return tex2D(_MainTex, i.mainUV) *  tex2D(_LightTex, i.mainUV);//
 			}
 
 			ENDCG
